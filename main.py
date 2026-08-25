@@ -14,11 +14,15 @@ class YoloDetectNode(Node):
         # 加载训练好的模型，best.pt放在同目录yolo_exp下
         self.model = YOLO("best.pt")
         self.conf_thresh = 0.5
+        self.iou_thresh = 0.45
 
         # USB摄像头
         self.cap = cv2.VideoCapture(0)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+        self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 关闭自动曝光
+        self.cap.set(cv2.CAP_PROP_EXPOSURE, 80)        # 设置手动曝光
 
         self.get_logger().info("YOLO?ROS2检测节点启动")
         self.run_loop()
@@ -28,9 +32,16 @@ class YoloDetectNode(Node):
             t0 = time.time()
             ret, frame = self.cap.read()
             if not ret:
+                self.get_logger().warn("摄像头读取失败")
+                time.sleep(0.05)
                 continue
 
-            results = self.model(frame, conf=self.conf_thresh)
+
+            results = self.model(frame,
+                     conf=self.conf_thresh,
+                     iou=self.iou_thresh,
+                     verbose=False,
+                     stream=True)
             det_array = Detection2DArray()
 
             for res in results:
@@ -62,6 +73,7 @@ class YoloDetectNode(Node):
             self.pub.publish(det_array)
 
             fps = 1.0 / (time.time() - t0)
+            fps = 1.0 / cost if cost > 1e-6 else 0
             cv2.putText(frame, f"FPS:{fps:.1f}", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
@@ -69,6 +81,7 @@ class YoloDetectNode(Node):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
+            rclpy.spin_once(self, timeout_sec=0)
         self.cap.release()
         cv2.destroyAllWindows()
 

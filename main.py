@@ -19,7 +19,7 @@ class YoloDetectNode(Node):
         # USB摄像头
         # mycobot摄像头曝光设置
         os.system("v4l2-ctl -d /dev/video0 -c auto_exposure=1")
-        os.system("v4l2-ctl -d /dev/video0 -c exposure_time_absolute=166")
+        os.system("v4l2-ctl -d /dev/video0 -c exposure_time_absolute=466")
 
         self.cap = cv2.VideoCapture(0)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -53,7 +53,8 @@ class YoloDetectNode(Node):
                     cls_id = int(box.cls[0])
                     x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
                     cls_name = self.model.names[cls_id]
-
+                    # 输出识别到物品的类别置信度和框坐标
+                    self.get_logger().info(f"Detected:{cls_name},Confidence:{conf:.2f},Rect:[{x1},{y1},{x2},{y2}]")
                     # 在图像上绘制检测框、类别、置信度
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(frame, f"{cls_name} {conf:.2f}",

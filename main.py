@@ -11,8 +11,7 @@ class YoloDetectNode(Node):
         super().__init__("yolo_detect_node")
         self.pub = self.create_publisher(Detection2DArray, "/yolo/detections", 10)
 
-        # 加载训练好的模型，best.pt放在同目录yolo_exp下
-        self.model = YOLO("best.engine")
+        self.model = YOLO("/home/mash/yolo_exp/best.engine")
         self.conf_thresh = 0.5
         self.iou_thresh = 0.45
 
@@ -38,17 +37,19 @@ class YoloDetectNode(Node):
 
 
             results = self.model(frame,
-                     conf=self.conf_thresh,
-                     iou=self.iou_thresh,
-                     verbose=False,
-                     stream=True)
+                    conf=self.conf_thresh,
+                    iou=self.iou_thresh,
+                    verbose=False,
+                    imgsz=640,
+                    stream=True)
+
             det_array = Detection2DArray()
 
             for res in results:
                 for box in res.boxes:
                     conf = float(box.conf[0])
                     cls_id = int(box.cls[0])
-                    x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
+                    x1, y1, x2, y2 = map(int, box.xyxy[0].numpy())
                     cls_name = self.model.names[cls_id]
 
                     # 在图像上绘制检测框、类别、置信度
@@ -72,7 +73,7 @@ class YoloDetectNode(Node):
 
             self.pub.publish(det_array)
 
-            fps = 1.0 / (time.time() - t0)
+            cost = 1.0 / (time.time() - t0)
             fps = 1.0 / cost if cost > 1e-6 else 0
             cv2.putText(frame, f"FPS:{fps:.1f}", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)

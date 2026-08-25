@@ -12,7 +12,7 @@ class YoloDetectNode(Node):
         self.pub = self.create_publisher(Detection2DArray, "/yolo/detections", 10)
 
         # 加载训练好的模型，best.pt放在同目录yolo_exp下
-        self.model = YOLO("best.pt")
+        self.model = YOLO("best.engine")
         self.conf_thresh = 0.5
         self.iou_thresh = 0.45
 

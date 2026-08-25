@@ -1,4 +1,5 @@
 import rclpy
+import os
 from rclpy.node import Node
 from ultralytics import YOLO
 import cv2
@@ -16,14 +17,15 @@ class YoloDetectNode(Node):
         self.iou_thresh = 0.45
 
         # USB摄像头
+        # mycobot摄像头曝光设置
+        os.system("v4l2-ctl -d /dev/video0 -c auto_exposure=1")
+        os.system("v4l2-ctl -d /dev/video0 -c exposure_time_absolute=166")
+
         self.cap = cv2.VideoCapture(0)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
-        self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 关闭自动曝光
-        self.cap.set(cv2.CAP_PROP_EXPOSURE, 80)        # 设置手动曝光
-
-        self.get_logger().info("YOLO?ROS2检测节点启动")
+        self.get_logger().info("YOLOROS2检测节点启动")
         self.run_loop()
 
     def run_loop(self):
@@ -49,7 +51,7 @@ class YoloDetectNode(Node):
                 for box in res.boxes:
                     conf = float(box.conf[0])
                     cls_id = int(box.cls[0])
-                    x1, y1, x2, y2 = map(int, box.xyxy[0].numpy())
+                    x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
                     cls_name = self.model.names[cls_id]
 
                     # 在图像上绘制检测框、类别、置信度
@@ -73,7 +75,7 @@ class YoloDetectNode(Node):
 
             self.pub.publish(det_array)
 
-            cost = 1.0 / (time.time() - t0)
+            cost = time.time() - t0
             fps = 1.0 / cost if cost > 1e-6 else 0
             cv2.putText(frame, f"FPS:{fps:.1f}", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
@@ -89,9 +91,15 @@ class YoloDetectNode(Node):
 
 def main():
     rclpy.init()
-    node = YoloDetectNode()
-    node.destroy_node()
-    rclpy.shutdown()
+    node = None
+    try:
+        node = YoloDetectNode()
+    except Exception:
+        pass
+    finally:
+        if node is not None:
+            node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

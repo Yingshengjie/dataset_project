@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# 自动分流训练与检测图片
 import os, random, shutil
 
 img_dir = r"D:\all_pics"

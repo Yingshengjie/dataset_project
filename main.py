@@ -13,7 +13,7 @@ class YoloDetectNode(Node):
         self.pub = self.create_publisher(Detection2DArray, "/yolo/detections", 10)
 
         self.model = YOLO("/home/mash/yolo_exp/best.engine")
-        self.conf_thresh = 0.5
+        self.conf_thresh = 0.4
         self.iou_thresh = 0.45
 
         # USB…„œÒÕ∑

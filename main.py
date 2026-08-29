@@ -51,7 +51,7 @@ class YoloDetectNode(Node):
                     iou=self.iou_thresh,
                     verbose=False,
                     imgsz=640,
-                    stream=True)
+                    stream=False)
 
             det_array = Detection2DArray()
 
@@ -91,6 +91,8 @@ class YoloDetectNode(Node):
                     cls_name = self.model.names[int(box.cls[0])]
                     detected_class_set.add(cls_name)
 
+            self.get_logger().info(f"当前帧检测到类别集合: {detected_class_set}")
+            
             self.pub.publish(det_array)
 
             cost = time.time() - t0

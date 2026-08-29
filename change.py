@@ -2,22 +2,32 @@ import os
 
 label_dir = r"D:\my_roboflow\Bottle and Class Detection.v1i.yolov8\train\labels"
 
-for fname in os.listdir(label_dir):
-    if not fname.endswith(".txt"):
-        continue
-    fpath = os.path.join(label_dir, fname)
-    keep = []
-    with open(fpath, "r", encoding="utf-8") as f:
-        for line in f:
-            parts = line.strip().split()
-            if not parts:
-                continue
-            c = parts[0]
-            if c == "0":
-                keep.append(" ".join(parts))
-            # c=="1" 直接丢弃，什么都不做
-    with open(fpath, "w", encoding="utf-8") as fw:
-        fw.write("\n".join(keep))
+print(f"Try path: {label_dir}")
+print(f"Exists: {os.path.exists(label_dir)}")
 
-print("?处理完毕：保留类别0，删除全部glass cup(类别1)")
-
+if not os.path.exists(label_dir):
+    print("ERROR: folder not found")
+else:
+    total = 0
+    empty = 0
+    for fname in os.listdir(label_dir):
+        if not fname.endswith(".txt"):
+            continue
+        total += 1
+        fpath = os.path.join(label_dir, fname)
+        keep = []
+        with open(fpath, "r", encoding="utf-8") as f:
+            for line in f:
+                s = line.strip()
+                if not s:
+                    continue
+                parts = s.split()
+                cls = parts[0].strip()
+                if cls == "0":
+                    keep.append(" ".join(parts))
+        with open(fpath, "w", encoding="utf-8") as fw:
+            fw.write("\n".join(keep))
+        if len(keep) == 0:
+            empty += 1
+    print(f"Total txt: {total}")
+    print(f"Empty after process: {empty}")

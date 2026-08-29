@@ -25,6 +25,10 @@ class YoloDetectNode(Node):
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
+        # 隔帧打印
+        self.frame_cnt = 0
+        self.print_interval = 10
+
         self.get_logger().info("YOLOROS2检测节点启动")
         self.run_loop()
 
@@ -54,7 +58,9 @@ class YoloDetectNode(Node):
                     x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
                     cls_name = self.model.names[cls_id]
                     # 输出识别到物品的类别置信度和框坐标
-                    self.get_logger().info(f"Detected:{cls_name},Confidence:{conf:.2f},Rect:[{x1},{y1},{x2},{y2}]")
+                    if self.frame_cnt % self.print_interval == 0:
+                        self.get_logger().info(f"Detected:{cls_name},Confidence:{conf:.2f},Rect:[{x1},{y1},{x2},{y2}]")
+
                     # 在图像上绘制检测框、类别、置信度
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(frame, f"{cls_name} {conf:.2f}",
@@ -85,6 +91,7 @@ class YoloDetectNode(Node):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
+            self.frame_cnt = (self.frame_cnt + 1) % 1000
             rclpy.spin_once(self, timeout_sec=0)
         self.cap.release()
         cv2.destroyAllWindows()

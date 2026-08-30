@@ -14,7 +14,7 @@ class YoloDetectNode(Node):
 
         self.model = YOLO("/home/mash/yolo_exp/best.engine")
         self.conf_thresh = 0.45
-        self.iou_thresh = 0.65
+        self.iou_thresh = 0.55
 
         # USB摄像头
         # mycobot摄像头曝光设置
@@ -170,15 +170,22 @@ class YoloDetectNode(Node):
                     text_content = f"Test:{self.test_count} {case_desc} -> WRONG"
                     text_color = (0, 0, 255)   #红色代表错误
 
+                frame_snap = frame.copy()
+
+                cv2.rectangle(frame_snap, (5, 45), (320, 75), (0, 0, 0), -1)
+
+                cv2.putText(frame_snap,f"Test:{self.test_count}  Acc:{acc_now:.1f}%",
+                (10,60),cv2.FONT_HERSHEY_SIMPLEX,0.55,(0,255,255),2)
+
                 # 显示识别正误
-                cv2.putText(frame, text_content, (400, 65),
+                cv2.putText(frame_snap, text_content, (10, 95),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.48, text_color, 2)
 
                 # 保存截图
                 snap_filename = f"test_{self.test_count:03d}.jpg"
                 snap_path = os.path.join(self.snapshot_dir, snap_filename)
-                cv2.imwrite(snap_path, frame)
+                cv2.imwrite(snap_path, frame_snap)
 
                 self.get_logger().info(
                     f"Test#{self.test_count} | Case:{case_desc} | Correct:{correct} | Current_acc:{acc_now:.1f}% | Saved:{snap_filename}"

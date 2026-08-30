@@ -39,6 +39,12 @@ class YoloDetectNode(Node):
         self.correct_count = 0
 
         self.get_logger().info("YOLOROS2检测节点启动")
+        self.get_logger().info("1:CORRECT 正确")
+        self.get_logger().info("2:WRONG:Missed detection 漏检")
+        self.get_logger().info("3:WRONG:Category detection error 类别识别错误")
+        self.get_logger().info("4:WRONG:False positive 误检")
+        self.get_logger().info("q:exit")
+        self.get_logger().info("==================")
         self.run_loop()
 
     def run_loop(self):
@@ -115,9 +121,9 @@ class YoloDetectNode(Node):
                 self.test_count +=1
                 anno_map = {
                     ord('1'): {"label":"CORRECT"},
-                    ord('2'): {"label":"WRONG:Missed detection"},
-                    ord('3'): {"label":"WRONG:Category detection error"},
-                    ord('4'): {"label":"WRONG:False positive"}
+                    ord('2'): {"label":"WRONG: Missed detection"},
+                    ord('3'): {"label":"WRONG: Category detection error"},
+                    ord('4'): {"label":"WRONG: False positive"}
                 }
                 anno = anno_map[key]
                 text_content = anno["label"]

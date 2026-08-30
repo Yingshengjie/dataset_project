@@ -13,7 +13,7 @@ class YoloDetectNode(Node):
         self.pub = self.create_publisher(Detection2DArray, "/yolo/detections", 10)
 
         self.model = YOLO("/home/mash/yolo_exp/best.engine")
-        self.conf_thresh = 0.45
+        self.conf_thresh = 0.40
         self.iou_thresh = 0.55
 
         # USB摄像头
@@ -39,12 +39,12 @@ class YoloDetectNode(Node):
         self.correct_count = 0
 
         self.get_logger().info("YOLOROS2检测节点启动")
-        self.get_logger().info("1:CORRECT 正确")
-        self.get_logger().info("2:WRONG:Missed detection 漏检")
-        self.get_logger().info("3:WRONG:Category detection error 类别识别错误")
-        self.get_logger().info("4:WRONG:False positive 误检")
-        self.get_logger().info("q:exit")
-        self.get_logger().info("==================")
+        print("1:CORRECT 正确")
+        print("2:WRONG: Missed detection 漏检")
+        print("3:WRONG: Category detection error 类别识别错误")
+        print("4:WRONG: False positive 误检")
+        print("q:exit")
+        print("==================")
         self.run_loop()
 
     def run_loop(self):

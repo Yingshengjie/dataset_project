@@ -89,15 +89,6 @@ class YoloDetectNode(Node):
                     det.bbox.size_y = float(y2 - y1)
                     det_array.detections.append(det)
 
-            # 收集当前帧目标类别集合
-            detected_class_set = set()
-            for res in results:
-                for box in res.boxes:
-                    cls_name = self.model.names[int(box.cls[0])]
-                    detected_class_set.add(cls_name)
-
-            # self.get_logger().info(f"当前帧检测到类别集合: {detected_class_set}")
-
             self.pub.publish(det_array)
 
             cost = time.time() - t0
@@ -122,74 +113,47 @@ class YoloDetectNode(Node):
             # 按键测试逻辑
             if key in [ord('1'), ord('2'), ord('3'), ord('4')]:
                 self.test_count +=1
-                expected_case = 0
-                if key == ord('1'):
-                    expected_case = 1
-                    case_desc = "Only bottle"
-                elif key == ord('2'):
-                    expected_case =2
-                    case_desc = "Only Bluetooth_earphones"
-                elif key == ord('3'):
-                    expected_case =3
-                    case_desc = "bottle + Bluetooth_earphones both"
-                elif key == ord('4'):
-                    expected_case =4
-                    case_desc = "None of two objects"
+                anno_map = {
+                    ord('1'): {"label":"CORRECT"},
+                    ord('2'): {"label":"WRONG:Missed detection"},
+                    ord('3'): {"label":"WRONG:Category detection error"},
+                    ord('4'): {"label":"WRONG:False positive"}
+            }
+            anno = anno_map[key]
+            text_content = anno["label"]
 
-                # 判断是否识别正确
-                det_bottle = "bottle" in detected_class_set
-                det_earphone = "Bluetooth_earphones" in detected_class_set
-                correct = False
+            # 只有按1(CORRECT)才累加正确计数
+            if text_content == "CORRECT":
+                self.correct_count += 1
+            acc_now = self.correct_count / self.test_count * 100
 
-                if expected_case ==1:
-                    #期望：只有bottle
-                    if det_bottle and (not det_earphone):
-                        correct = True
-                elif expected_case ==2:
-                    #期望：只有蓝牙耳机
-                    if (not det_bottle) and det_earphone:
-                        correct = True
-                elif expected_case ==3:
-                    #期望两个同时出现
-                    if det_bottle and det_earphone:
-                        correct = True
-                elif expected_case ==4:
-                    #期望两个都不存在
-                    if (not det_bottle) and (not det_earphone):
-                        correct = True
+            # 设置文字颜色
+            if text_content == "CORRECT":
+                text_color = (0, 255, 0)
+            else:
+                text_color = (0, 0, 255)
 
-                if correct:
-                    self.correct_count +=1
 
-                acc_now = self.correct_count / self.test_count *100
+            frame_snap = frame.copy()
 
-                if correct:
-                    text_content = f"Test:{self.test_count} {case_desc} -> CORRECT"
-                    text_color = (0, 255, 0)   #绿色代表正确
-                else:
-                    text_content = f"Test:{self.test_count} {case_desc} -> WRONG"
-                    text_color = (0, 0, 255)   #红色代表错误
+            cv2.rectangle(frame_snap, (5, 45), (220, 65), (0, 0, 0), -1)
 
-                frame_snap = frame.copy()
-
-                cv2.rectangle(frame_snap, (5, 45), (320, 75), (0, 0, 0), -1)
-
-                cv2.putText(frame_snap,f"Test:{self.test_count}  Acc:{acc_now:.1f}%",
+            cv2.putText(frame_snap,f"Test:{self.test_count}  Acc:{acc_now:.1f}%",
                 (10,60),cv2.FONT_HERSHEY_SIMPLEX,0.55,(0,255,255),2)
 
-                # 显示识别正误
-                cv2.putText(frame_snap, text_content, (10, 95),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.48, text_color, 2)
+            # 显示识别正误
+            cv2.putText(frame_snap, text_content, (10, 95),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.48, text_color, 2)
 
                 # 保存截图
-                snap_filename = f"test_{self.test_count:03d}.jpg"
-                snap_path = os.path.join(self.snapshot_dir, snap_filename)
-                cv2.imwrite(snap_path, frame_snap)
+            snap_filename = f"test_{self.test_count:03d}.jpg"
+            snap_path = os.path.join(self.snapshot_dir, snap_filename)
+            cv2.imwrite(snap_path, frame_snap)
 
-                self.get_logger().info(
-                    f"Test#{self.test_count} | Case:{case_desc} | Correct:{correct} | Current_acc:{acc_now:.1f}% | Saved:{snap_filename}"
-                )
+            self.get_logger().info(
+                f"Test#{self.test_count} | Annotation:{text_content} | Current_acc:{acc_now:.1f}% | Saved:{snap_filename}"
+            )
 
 #            self.frame_cnt = (self.frame_cnt + 1) % 1000
             rclpy.spin_once(self, timeout_sec=0)

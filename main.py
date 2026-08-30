@@ -118,42 +118,42 @@ class YoloDetectNode(Node):
                     ord('2'): {"label":"WRONG:Missed detection"},
                     ord('3'): {"label":"WRONG:Category detection error"},
                     ord('4'): {"label":"WRONG:False positive"}
-            }
-            anno = anno_map[key]
-            text_content = anno["label"]
+                }
+                anno = anno_map[key]
+                text_content = anno["label"]
 
-            # 只有按1(CORRECT)才累加正确计数
-            if text_content == "CORRECT":
-                self.correct_count += 1
-            acc_now = self.correct_count / self.test_count * 100
+                # 只有按1(CORRECT)才累加正确计数
+                if text_content == "CORRECT":
+                    self.correct_count += 1
+                acc_now = self.correct_count / self.test_count * 100
 
-            # 设置文字颜色
-            if text_content == "CORRECT":
-                text_color = (0, 255, 0)
-            else:
-                text_color = (0, 0, 255)
+                # 设置文字颜色
+                if text_content == "CORRECT":
+                    text_color = (0, 255, 0)
+                else:
+                    text_color = (0, 0, 255)
 
 
-            frame_snap = frame.copy()
+                frame_snap = frame.copy()
 
-            cv2.rectangle(frame_snap, (5, 45), (220, 65), (0, 0, 0), -1)
+                cv2.rectangle(frame_snap, (5, 45), (220, 65), (0, 0, 0), -1)
 
-            cv2.putText(frame_snap,f"Test:{self.test_count}  Acc:{acc_now:.1f}%",
-                (10,60),cv2.FONT_HERSHEY_SIMPLEX,0.55,(0,255,255),2)
+                cv2.putText(frame_snap,f"Test:{self.test_count}  Acc:{acc_now:.1f}%",
+                    (10,60),cv2.FONT_HERSHEY_SIMPLEX,0.55,(0,255,255),2)
 
-            # 显示识别正误
-            cv2.putText(frame_snap, text_content, (10, 95),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.48, text_color, 2)
+                # 显示识别正误
+                cv2.putText(frame_snap, text_content, (10, 95),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.48, text_color, 2)
 
                 # 保存截图
-            snap_filename = f"test_{self.test_count:03d}.jpg"
-            snap_path = os.path.join(self.snapshot_dir, snap_filename)
-            cv2.imwrite(snap_path, frame_snap)
+                snap_filename = f"test_{self.test_count:03d}.jpg"
+                snap_path = os.path.join(self.snapshot_dir, snap_filename)
+                cv2.imwrite(snap_path, frame_snap)
 
-            self.get_logger().info(
-                f"Test#{self.test_count} | Annotation:{text_content} | Current_acc:{acc_now:.1f}% | Saved:{snap_filename}"
-            )
+                self.get_logger().info(
+                    f"Test#{self.test_count} | Annotation:{text_content} | Current_acc:{acc_now:.1f}% | Saved:{snap_filename}"
+                )
 
 #            self.frame_cnt = (self.frame_cnt + 1) % 1000
             rclpy.spin_once(self, timeout_sec=0)

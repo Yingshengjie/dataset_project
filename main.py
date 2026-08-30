@@ -26,8 +26,13 @@ class YoloDetectNode(Node):
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
         # 隔帧打印
-        self.frame_cnt = 0
-        self.print_interval = 10
+#        self.frame_cnt = 0
+#        self.print_interval = 10
+
+        # 截图保存目录
+        self.snapshot_dir = "/home/mash/yolo_exp/test_snapshots1"
+        if not os.path.exists(self.snapshot_dir):
+            os.makedirs(self.snapshot_dir)
 
         # 测试统计
         self.test_count = 0
@@ -62,8 +67,8 @@ class YoloDetectNode(Node):
                     x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
                     cls_name = self.model.names[cls_id]
                     # 输出识别到物品的类别置信度和框坐标
-                    if self.frame_cnt % self.print_interval == 0:
-                        self.get_logger().info(f"Detected:{cls_name},Confidence:{conf:.2f},Rect:[{x1},{y1},{x2},{y2}]")
+#                    if self.frame_cnt % self.print_interval == 0:
+#                        self.get_logger().info(f"Detected:{cls_name},Confidence:{conf:.2f},Rect:[{x1},{y1},{x2},{y2}]")
 
                     # 在图像上绘制检测框、类别、置信度
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -91,8 +96,8 @@ class YoloDetectNode(Node):
                     cls_name = self.model.names[int(box.cls[0])]
                     detected_class_set.add(cls_name)
 
-            self.get_logger().info(f"当前帧检测到类别集合: {detected_class_set}")
-            
+            # self.get_logger().info(f"当前帧检测到类别集合: {detected_class_set}")
+
             self.pub.publish(det_array)
 
             cost = time.time() - t0
@@ -157,11 +162,29 @@ class YoloDetectNode(Node):
                     self.correct_count +=1
 
                 acc_now = self.correct_count / self.test_count *100
+
+                if correct:
+                    text_content = f"Test:{self.test_count} {case_desc} -> CORRECT"
+                    text_color = (0, 255, 0)   #绿色代表正确
+                else:
+                    text_content = f"Test:{self.test_count} {case_desc} -> WRONG"
+                    text_color = (0, 0, 255)   #红色代表错误
+
+                # 显示识别正误
+                cv2.putText(frame, text_content, (400, 65),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.48, text_color, 2)
+
+                # 保存截图
+                snap_filename = f"test_{self.test_count:03d}.jpg"
+                snap_path = os.path.join(self.snapshot_dir, snap_filename)
+                cv2.imwrite(snap_path, frame)
+
                 self.get_logger().info(
-                    f"Test#{self.test_count} | Case:{case_desc} | Correct:{correct} | Current_acc:{acc_now:.1f}%"
+                    f"Test#{self.test_count} | Case:{case_desc} | Correct:{correct} | Current_acc:{acc_now:.1f}% | Saved:{snap_filename}"
                 )
 
-            self.frame_cnt = (self.frame_cnt + 1) % 1000
+#            self.frame_cnt = (self.frame_cnt + 1) % 1000
             rclpy.spin_once(self, timeout_sec=0)
         self.cap.release()
         cv2.destroyAllWindows()
